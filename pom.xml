@@ -3,7 +3,7 @@
 
     <groupId>com.github.dakusui</groupId>
     <artifactId>processstreamer</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <description>Command line streamer library for Java 8</description>
     <packaging>jar</packaging>
 
@@ -24,7 +24,7 @@
             scm:git:git@github.com:dakusui/processstreamer.git
         </developerConnection>
         <url>https://github.com/dakusui/processstreamer</url>
-        <tag>processstreamer-1.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
