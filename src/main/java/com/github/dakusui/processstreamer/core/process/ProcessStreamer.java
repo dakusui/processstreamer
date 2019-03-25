@@ -328,6 +328,12 @@ public class ProcessStreamer {
 
   private static Process createProcess(Shell shell, String command, File cwd, Map<String, String> env) {
     try {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug("Executing a command line:{}(shell={})", command, String.format("%s", shell));
+      LOGGER.trace("cwd:{}", cwd);
+      if (LOGGER.isTraceEnabled())
+        for (String envvar : env.keySet())
+          LOGGER.trace("(envvar):{}={}", envvar, env.get(envvar));
       ProcessBuilder b = new ProcessBuilder()
           .command(
               Stream.concat(
