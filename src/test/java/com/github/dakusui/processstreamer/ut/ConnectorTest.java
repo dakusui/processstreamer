@@ -77,13 +77,13 @@ public class ConnectorTest {
     }
   }
 
-  public static class PartitionerTest {
+  public static class PartitionerTest extends TestUtils.TestBase {
     @Test
     public void placeHolder() {
     }
   }
 
-  public static class PartitionerAndMergerTest {
+  public static class PartitionerAndMergerTest extends TestUtils.TestBase {
     @Test(timeout = 30_000)
     public void partitionerAndThenMerger_1M() {
       int result = new Merger.Builder<>(
