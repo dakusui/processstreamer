@@ -31,8 +31,8 @@ public enum IoUtils {
     return new BoundedBufferedReader(new InputStreamReader(is, charset));
   }
 
-  static class BoundedBufferedReader extends BufferedReader {
-    private static final int DEFAULT_MAX_LINE_LENGTH = 1024;        //Max bytes per line
+  public static class BoundedBufferedReader extends BufferedReader {
+    public static final int DEFAULT_MAX_LINE_LENGTH = 1024;        //Max bytes per line
 
     private final int     readerMaxLineLen;
     private       boolean finished;
