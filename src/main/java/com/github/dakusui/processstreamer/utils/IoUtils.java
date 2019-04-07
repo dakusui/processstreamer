@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public enum IoUtils {
   ;
@@ -26,21 +27,47 @@ public enum IoUtils {
    *
    * </pre>
    */
-  static BufferedReader bufferedReader(InputStream is, Charset charset) {
+  public static BufferedReader bufferedReader(InputStream is, Charset charset) {
     return new BoundedBufferedReader(new InputStreamReader(is, charset));
   }
 
   static class BoundedBufferedReader extends BufferedReader {
     private static final int DEFAULT_MAX_LINE_LENGTH = 1024;        //Max bytes per line
 
-    private final int readerMaxLineLen;
+    private final int     readerMaxLineLen;
+    private       boolean finished;
 
     BoundedBufferedReader(InputStreamReader reader) {
       super(reader);
       readerMaxLineLen = DEFAULT_MAX_LINE_LENGTH;
+      finished = false;
     }
 
+    @Override
     public String readLine() throws IOException {
+      if (finished)
+        return null;
+      AtomicBoolean tooLong = new AtomicBoolean(false);
+      String line = privateReadLine(tooLong);
+      if (line == null)
+        return null;
+      if (!tooLong.get())
+        return line;
+      StringBuilder b = new StringBuilder(readerMaxLineLen * 4);
+      b.append(line);
+      do {
+        tooLong.set(false);
+        line = privateReadLine(tooLong);
+        if (line == null) {
+          finished = true;
+          return b.toString();
+        }
+        b.append(line);
+      } while (tooLong.get());
+      return b.toString();
+    }
+
+    private String privateReadLine(AtomicBoolean tooLong) throws IOException {
       int currentPos = 0;
       char[] data = new char[readerMaxLineLen];
       final int CR = 13;
@@ -53,8 +80,10 @@ public enum IoUtils {
         //Check readerMaxLineLen limit
         if (currentPos < readerMaxLineLen)
           currentCharVal = super.read();
-        else
+        else {
+          tooLong.set(true);
           break;
+        }
       }
 
       if (currentCharVal < 0) {
@@ -84,7 +113,6 @@ public enum IoUtils {
         }
         return (new String(data, 0, currentPos));
       }
-
     }
   }
 }
