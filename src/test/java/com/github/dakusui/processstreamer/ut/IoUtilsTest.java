@@ -16,9 +16,10 @@ import static com.github.dakusui.crest.Crest.allOf;
 import static com.github.dakusui.crest.Crest.asInteger;
 import static com.github.dakusui.crest.Crest.asString;
 import static com.github.dakusui.crest.Crest.assertThat;
-import static com.github.dakusui.processstreamer.utils.IoUtils.BoundedBufferedReader.DEFAULT_MAX_LINE_LENGTH;
 
 public class IoUtilsTest {
+  private static final int DEFAULT_MAX_LINE_LENGTH = 1024;
+
   @Test
   public void longerLineThanMaxBytesPerLine() throws IOException {
     String data = createString(4096);
