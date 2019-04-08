@@ -156,7 +156,7 @@ public class StreamUtilsTest extends TestUtils.TestBase {
       );
     }
 
-    @Test
+    @Test(timeout = 2_000)
     public void givenData$whenTee$thenAllDataStreamed() {
       List<String> out = synchronizedList(new LinkedList<>());
       int numDownstreams = 2;
