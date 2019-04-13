@@ -150,8 +150,8 @@ public class ProcessStreamer {
 
   public void destroy() {
     synchronized (this.process) {
+      this.threadPool.shutdownNow();
       if (this.process.isAlive()) {
-        this.threadPool.shutdownNow();
         this.process.destroy();
       }
     }
