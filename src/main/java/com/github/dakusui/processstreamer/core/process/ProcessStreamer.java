@@ -109,6 +109,8 @@ public class ProcessStreamer {
             this.waitFor();
             LOGGER.debug("Closed");
           } catch (InterruptedException ignored) {
+          } finally {
+            destroy();
           }
         }));
   }
