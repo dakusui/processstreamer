@@ -1,5 +1,6 @@
 package com.github.dakusui.processstreamer.core.process;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.stream.Stream;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
-public interface Shell {
+public interface Shell extends Serializable {
 
   Shell LOCAL_SHELL = new Builder.ForLocal().build();
 

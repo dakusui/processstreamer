@@ -32,8 +32,8 @@ import static java.util.stream.Collectors.toList;
  */
 public class ProcessStreamer {
   class Ports {
-    final InputStream stderr;
-    final InputStream stdout;
+    final InputStream  stderr;
+    final InputStream  stdout;
     final OutputStream stdin;
 
     Ports(InputStream stderr, InputStream stdout, OutputStream stdin) {
@@ -43,17 +43,17 @@ public class ProcessStreamer {
     }
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ProcessStreamer.class);
-  private final String commandLine;
-  private final Process process;
-  private final Supplier<String> formatter;
-  private final RingBuffer<String> ringBuffer;
-  private final ExecutorService threadPool;
-  private final Checker checker;
-  private final Shell shell;
-  private final Stream<String> output;
-  private final Stream<String> input;
-  private final CloseableStringConsumer inputDestination;
+  private static final Logger                  LOGGER = LoggerFactory.getLogger(ProcessStreamer.class);
+  private final        String                  commandLine;
+  private final        Process                 process;
+  private final        Supplier<String>        formatter;
+  private final        RingBuffer<String>      ringBuffer;
+  private final        ExecutorService         threadPool;
+  private final        Checker                 checker;
+  private final        Shell                   shell;
+  private final        Stream<String>          output;
+  private final        Stream<String>          input;
+  private final        CloseableStringConsumer inputDestination;
 
   private ProcessStreamer(
       Shell shell,
@@ -272,8 +272,8 @@ public class ProcessStreamer {
       Charset charset,
       RingBuffer<String> ringBuffer) {
     class StreamFactory implements Function<ExecutorService, Stream<String>> {
-      private final InputStream in;
-      private final StreamOptions options;
+      private final InputStream           in;
+      private final StreamOptions         options;
       private final Checker.StreamChecker checker;
 
       private StreamFactory(InputStream in, StreamOptions options, Checker.StreamChecker checker) {
@@ -375,17 +375,17 @@ public class ProcessStreamer {
   }
 
   public static class Builder {
-    private Shell shell;
-    private String command;
-    private File cwd;
-    private final Map<String, String> env = new HashMap<>();
-    private StreamOptions stdoutOptions = new StreamOptions(true, "STDOUT", true, true);
-    private StreamOptions stderrOptions = new StreamOptions(true, "STDERR", true, true);
-    private Charset charset = Charset.defaultCharset();
-    private int queueSize = 5_000;
-    private int ringBufferSize = 100;
-    private Stream<String> stdin;
-    private Checker checker;
+    private       Shell               shell;
+    private       String              command;
+    private       File                cwd;
+    private final Map<String, String> env            = new HashMap<>();
+    private       StreamOptions       stdoutOptions  = new StreamOptions(true, "STDOUT", true, true);
+    private       StreamOptions       stderrOptions  = new StreamOptions(true, "STDERR", true, true);
+    private       Charset             charset        = Charset.defaultCharset();
+    private       int                 queueSize      = 5_000;
+    private       int                 ringBufferSize = 100;
+    private       Stream<String>      stdin;
+    private       Checker             checker;
 
     Builder() {
       this.checker(Checker.createDefault());
@@ -490,7 +490,7 @@ public class ProcessStreamer {
 
   public static class StreamOptions {
     private final boolean logged;
-    private final String loggingTag;
+    private final String  loggingTag;
     private final boolean tailed;
     private final boolean connected;
 
@@ -518,7 +518,7 @@ public class ProcessStreamer {
     }
   }
 
-  public interface Checker {
+  public interface Checker extends Serializable {
     default int check(ProcessStreamer processStreamer) throws InterruptedException, CommandExecutionException {
       final int exitCode = processStreamer.process.waitFor();
       Optional<String> mismatch = describeMismatch(exitCode);
@@ -558,17 +558,7 @@ public class ProcessStreamer {
     }
 
     static Checker createCheckerForExitCode(int acceptableExitCode) {
-      return createCheckerForExitCode(new Predicate<Integer>() {
-        @Override
-        public boolean test(Integer value) {
-          return Objects.equals(value, acceptableExitCode);
-        }
-
-        @Override
-        public String toString() {
-          return "==" + acceptableExitCode;
-        }
-      });
+      return createCheckerForExitCode(new SerializablePredicate(acceptableExitCode));
     }
 
     static Checker createCheckerForExitCode(Predicate<Integer> cond) {
@@ -599,12 +589,12 @@ public class ProcessStreamer {
      * @see Checker#forStdOut()
      * @see Checker#forStdErr()
      */
-    interface StreamChecker extends Consumer<String>, BooleanSupplier {
+    interface StreamChecker extends Consumer<String>, BooleanSupplier, Serializable {
     }
 
     class Impl implements Checker {
-      final StreamChecker stdoutChecker;
-      final StreamChecker stderrChecker;
+      final StreamChecker      stdoutChecker;
+      final StreamChecker      stderrChecker;
       final Predicate<Integer> exitCodeChecker;
 
       Impl(StreamChecker stdoutChecker, StreamChecker stderrChecker, Predicate<Integer> exitCodeChecker) {
@@ -627,6 +617,24 @@ public class ProcessStreamer {
       @Override
       public Predicate<Integer> exitCodeChecker() {
         return this.exitCodeChecker;
+      }
+    }
+
+    class SerializablePredicate implements Predicate<Integer>, Serializable {
+      private final int acceptableExitCode;
+
+      SerializablePredicate(int acceptableExitCode) {
+        this.acceptableExitCode = acceptableExitCode;
+      }
+
+      @Override
+      public boolean test(Integer value) {
+        return Objects.equals(value, acceptableExitCode);
+      }
+
+      @Override
+      public String toString() {
+        return "==" + acceptableExitCode;
       }
     }
   }
