@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -307,6 +308,82 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
       Executors.newSingleThreadExecutor().submit(() -> {
       });
       ps.stream().forEach(System.out::println);
+    }
+  }
+
+  public static class CheckerTest extends TestUtils.TestBase {
+    @Test(expected = ProcessStreamer.Failure.class)
+    public void givenInvalidCharacters$whenRunProcessStreamer$thenOutputsExpectedErrorMessages() {
+      String command = "echo test";
+      ProcessStreamer ps = source()
+              .command(command)
+              .checker(new TestChecker())
+              .build();
+
+      try (Stream<String> s = ps.stream()) {
+        s.forEach(System.out::println);
+      } catch (ProcessStreamer.Failure e) {
+        assertThat(
+                e.getMessage(),
+                asString().containsString("Detecting an issue in stdOut")
+                        .containsString("Detecting an issue in stdErr").$()
+        );
+        throw e;
+      }
+    }
+
+    public static class TestChecker implements ProcessStreamer.Checker {
+
+      @Override
+      public StreamChecker forStdOut() {
+        return new StreamChecker() {
+          private boolean flag = false;
+          @Override
+          public boolean getAsBoolean() {
+            return flag;
+          }
+
+          @Override
+          public void accept(String s) {
+            if (s.contains("test")) {
+              flag = true;
+            }
+          }
+
+          @Override
+          public String toString() {
+            return "Detecting an issue in stdOut";
+          }
+        };
+      }
+
+      @Override
+      public StreamChecker forStdErr() {
+        return new StreamChecker() {
+          private boolean flag = false;
+          @Override
+          public boolean getAsBoolean() {
+            return flag;
+          }
+
+          @Override
+          public void accept(String s) {
+            if (s.contains("test")) {
+              flag = true;
+            }
+          }
+
+          @Override
+          public String toString() {
+            return "Detecting an issue in stdErr";
+          }
+        };
+      }
+
+      @Override
+      public Predicate<Integer> exitCodeChecker() {
+        return i -> i == 0;
+      }
     }
   }
 
