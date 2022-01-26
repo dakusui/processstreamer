@@ -541,7 +541,7 @@ public class ProcessStreamer {
       if (!forStdOut().getAsBoolean())
         mismatches.add(format("Expectation for stdout [%s] was not met.", forStdOut()));
       if (!forStdErr().getAsBoolean())
-        mismatches.add(format("Expectation for stderr [%s] was not met.", forStdOut()));
+        mismatches.add(format("Expectation for stderr [%s] was not met.", forStdErr()));
       return mismatches.isEmpty() ?
           Optional.empty() :
           Optional.of(mismatches.stream().collect(joining(format("%n  "), "  ", "")));
