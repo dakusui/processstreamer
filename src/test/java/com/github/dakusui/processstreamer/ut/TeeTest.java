@@ -5,6 +5,7 @@ import com.github.dakusui.processstreamer.utils.ConcurrencyUtils;
 import com.github.dakusui.processstreamer.utils.Repeat;
 import com.github.dakusui.processstreamer.utils.StreamUtils;
 import com.github.dakusui.crest.core.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
@@ -60,6 +61,7 @@ public class TeeTest extends SplittingConnectorTest {
   }
 
   public abstract static class Base {
+    @Ignore
     @Repeat(times = 1_000)
     @Test(timeout = 10_000)
     public void givenShortStream$thenTeeInto3$thenStreamedCorrectly() {
@@ -75,6 +77,7 @@ public class TeeTest extends SplittingConnectorTest {
       executeTeeTest(numSplits, numItems, tee());
     }
 
+    @Ignore
     @Test(timeout = 10_000)
     public void givenLongStream$thenTeeInto3$thenStreamedCorrectly() {
       int numSplits = 3;
