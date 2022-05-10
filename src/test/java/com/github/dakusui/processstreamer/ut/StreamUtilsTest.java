@@ -211,6 +211,7 @@ public class StreamUtilsTest extends TestUtils.TestBase {
           .forEach(s -> s.forEach(System.out::println));
     }
 
+    @Ignore
     @Test(timeout = 5_000)
     public void partition1000parallelWithTestUtils() {
       TestUtils.partition(dataStream("data", 1_000))
@@ -235,6 +236,7 @@ public class StreamUtilsTest extends TestUtils.TestBase {
           .forEach(s -> s.forEach(System.out::println));
     }
 
+    @Ignore
     @Test(timeout = 1_000)
     public void partition1000testUtils() {
       TestUtils.partition(dataStream("data", 1000))
