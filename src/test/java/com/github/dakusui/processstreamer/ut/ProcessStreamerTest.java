@@ -1,7 +1,7 @@
 package com.github.dakusui.processstreamer.ut;
 
 import com.github.dakusui.processstreamer.core.process.ProcessStreamer;
-import com.github.dakusui.processstreamer.core.process.Shell;
+import com.github.dakusui.processstreamer.core.process.ContextualCommandInvoker;
 import com.github.dakusui.processstreamer.utils.TestUtils;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -134,7 +134,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
 
     @Test(timeout = 1_000)
     public void givenStreamImmediatelyCloses$whenCommandWritingOneThousandLines$thenEventuallyFinishes() {
-      source(Shell.local()).command("seq 1 1000").build().stream().forEach(System.out::println);
+      source(ContextualCommandInvoker.local()).command("seq 1 1000").build().stream().forEach(System.out::println);
     }
 
     @Test
@@ -229,7 +229,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
     @Test(timeout = 1_000)
     public void givenSort$whenDrain1kDataAndClose$thenOutputIsCorrectAndInOrder() throws InterruptedException {
       assertThat(
-          runProcessStreamer(() -> pipe(dataStream("data", 1_000), Shell.local()).command("sort").build()),
+          runProcessStreamer(() -> pipe(dataStream("data", 1_000), ContextualCommandInvoker.local()).command("sort").build()),
           asListOf(String.class,
               sublistAfter(containsString("997"))
                   .after(containsString("998"))

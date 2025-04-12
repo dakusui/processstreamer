@@ -66,6 +66,22 @@ public enum StreamUtils {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  public static  <T> Stream<T> concat(Stream<T>... streams) {
+    if (streams.length == 0) {
+      return Stream.empty();
+    }
+    if (streams.length == 1) {
+      return streams[0];
+    }
+    if (streams.length == 2) {
+      return Stream.concat(streams[0], streams[1]);
+    }
+    Stream<T>[] rest = new Stream[streams.length - 1];
+    System.arraycopy(streams, 1, rest, 0, rest.length);
+    return concat(streams[0], concat(rest));
+  }
+
   public interface CloseableStringConsumer extends Consumer<String>, Closeable {
     @Override
     default void accept(String s) {

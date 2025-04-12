@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 
 public enum IoUtils {
   ;
+
   public static BufferedReader bufferedReader(InputStream is, Charset charset) {
     return new BufferedReader(new InputStreamReader(is, charset));
   }
