@@ -2,6 +2,9 @@ package com.github.dakusui.processstreamer.launchers;
 
 import com.github.dakusui.processstreamer.core.process.ContextualCommandInvoker;
 import com.github.dakusui.processstreamer.core.process.ProcessStreamer;
+import com.github.dakusui.processstreamer.utils.StreamUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -9,6 +12,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class CommandLauncher {
+  private static final Logger LOGGER = LoggerFactory.getLogger(CommandLauncher.class);
   private final File directory;
   private final ContextualCommandInvoker contextualCommandInvoker;
   private final String command;
@@ -27,13 +31,13 @@ public class CommandLauncher {
     this.args = args;
   }
 
-  public static Builder begin() {
-    return new Builder();
+  public static Builder<?> begin() {
+    return new Builder<>();
   }
 
   public Stream<String> perform() {
     List<String> commandLine = composeCommandLine();
-    System.out.println("shell:<" + this.contextualCommandInvoker + ">, command:<" + commandLine + ">, directory:<" + this.directory + ">");
+    LOGGER.debug("shell:<{}>, command:<{}>, directory:<{}>", this.contextualCommandInvoker, commandLine, this.directory);
     return new ProcessStreamer.Builder(this.contextualCommandInvoker, commandLine)
         .cwd(this.directory)
         .build()
@@ -41,12 +45,13 @@ public class CommandLauncher {
   }
 
   private List<String> composeCommandLine() {
-    return Stream.concat(Stream.of(this.command),
-                         this.args.stream())
-                 .toList();
+    return StreamUtils.concat(Stream.of(this.command),
+                              this.options.stream().map(CommandLauncherOption::toString),
+                              this.args.stream())
+                      .toList();
   }
 
-  public static class Builder {
+  public static class Builder<B extends Builder<B>> {
     File directory;
     public ContextualCommandInvoker contextualCommandInvoker;
     public String command;
@@ -57,9 +62,10 @@ public class CommandLauncher {
       this.shell(ContextualCommandInvoker.local());
     }
 
-    public Builder shell(ContextualCommandInvoker contextualCommandInvoker) {
+    @SuppressWarnings("unchecked")
+    public B shell(ContextualCommandInvoker contextualCommandInvoker) {
       this.contextualCommandInvoker = contextualCommandInvoker;
-      return this;
+      return (B) this;
     }
 
     /**
@@ -68,34 +74,38 @@ public class CommandLauncher {
      * @param directory a directory in which the command is run.
      * @return This object.
      */
-    public Builder directory(File directory) {
+    @SuppressWarnings("unchecked")
+    public B directory(File directory) {
       this.directory = directory;
-      return this;
+      return (B) this;
     }
 
-    public Builder shell(String shellCommand) {
+    public B shell(String shellCommand) {
       return this.shell(new ContextualCommandInvoker.Builder.ForLocal().clearOptions()
                                                                        .withProgram(shellCommand)
                                                                        .build());
     }
 
-    public Builder command(String command) {
+    @SuppressWarnings("unchecked")
+    public B command(String command) {
       this.command = command;
-      return this;
+      return (B) this;
     }
 
-    public Builder arg(String arg) {
+    @SuppressWarnings("unchecked")
+    public B arg(String arg) {
       this.args.add(arg);
-      return this;
+      return (B) this;
     }
 
-    public Builder option(String option) {
+    public B option(String option) {
       return this.option(option, null);
     }
 
-    public Builder option(String option, String value) {
+    @SuppressWarnings("unchecked")
+    public B option(String option, String value) {
       this.options.add(new CommandLauncherOption(option, value));
-      return this;
+      return (B) this;
     }
 
     public CommandLauncher build() {
@@ -105,6 +115,5 @@ public class CommandLauncher {
     public Stream<String> perform() {
       return build().perform();
     }
-
   }
 }

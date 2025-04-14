@@ -1,6 +1,7 @@
 package com.github.dakusui.processstreamer.sandbox;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.Stream;
 

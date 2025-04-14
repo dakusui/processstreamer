@@ -3,7 +3,7 @@ package com.github.dakusui.processstreamer.ut;
 
 import com.github.dakusui.processstreamer.core.process.ContextualCommandInvoker;
 import com.github.dakusui.processstreamer.launchers.CommandLauncher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;

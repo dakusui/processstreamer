@@ -1,7 +1,7 @@
 package com.github.dakusui.processstreamer.ut;
 
 import com.github.dakusui.processstreamer.utils.IoUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -12,10 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static com.github.dakusui.crest.Crest.allOf;
-import static com.github.dakusui.crest.Crest.asInteger;
-import static com.github.dakusui.crest.Crest.asString;
-import static com.github.dakusui.crest.Crest.assertThat;
+import static com.github.valid8j.fluent.Expectations.*;
+
 
 public class IoUtilsTest {
   private static final int DEFAULT_MAX_LINE_LENGTH = 1024;
@@ -29,13 +27,9 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(1).$(),
-            asString("get", 0).equalTo(data).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(data));
   }
 
   @Test
@@ -47,12 +41,9 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(1).$(),
-            asString("get", 0).equalTo(data).$()
-        )
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(data)
     );
   }
 
@@ -65,13 +56,9 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(1).$(),
-            asString("get", 0).equalTo(data).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(data));
   }
 
   @Test
@@ -83,13 +70,10 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(1).$(),
-            asString("get", 0).equalTo(data).$()
-        )
-    );
+
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(data));
   }
 
   @Test
@@ -101,13 +85,9 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(1).$(),
-            asString("get", 0).equalTo(data).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(data));
   }
 
   @Test
@@ -119,12 +99,9 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(0).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(data));
   }
 
   @Test
@@ -136,13 +113,9 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(1).$(),
-            asString("get", 0).equalTo("").$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(1),
+        value(readLines).elementAt(0).toBe().equalTo(""));
   }
 
   @Test
@@ -154,15 +127,11 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(2).$(),
-            asString("get", 0).equalTo("").$(),
-            asString("get", 1).equalTo("hello").$()
-        )
-    );
-  }
+    assertAll(
+        value(readLines).size().toBe().equalTo(2),
+        value(readLines).elementAt(0).toBe().equalTo(""),
+        value(readLines).elementAt(1).toBe().equalTo("hello"));
+   }
 
   @Test
   public void twoLinesA() throws IOException {
@@ -175,14 +144,10 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(2).$(),
-            asString("get", 0).equalTo(l1).$(),
-            asString("get", 1).equalTo(l2).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(2),
+        value(readLines).elementAt(0).toBe().equalTo(l1),
+        value(readLines).elementAt(1).toBe().equalTo(l2));
   }
 
   @Test
@@ -196,14 +161,10 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(2).$(),
-            asString("get", 0).equalTo(l1).$(),
-            asString("get", 1).equalTo(l2).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(2),
+        value(readLines).elementAt(0).toBe().equalTo(l1),
+        value(readLines).elementAt(1).toBe().equalTo(l2));
   }
 
   @Test
@@ -218,15 +179,11 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(3).$(),
-            asString("get", 0).equalTo(l1).$(),
-            asString("get", 1).equalTo(l2).$(),
-            asString("get", 2).equalTo(l3).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(3),
+        value(readLines).elementAt(0).toBe().equalTo(l1),
+        value(readLines).elementAt(1).toBe().equalTo(l1),
+        value(readLines).elementAt(2).toBe().equalTo(l2));
   }
 
   @Test
@@ -241,15 +198,11 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-    assertThat(
-        readLines,
-        allOf(
-            asInteger("size").equalTo(3).$(),
-            asString("get", 0).equalTo(l1).$(),
-            asString("get", 1).equalTo(l2).$(),
-            asString("get", 2).equalTo(l3).$()
-        )
-    );
+    assertAll(
+        value(readLines).size().toBe().equalTo(3),
+        value(readLines).elementAt(0).toBe().equalTo(l1),
+        value(readLines).elementAt(1).toBe().equalTo(l1),
+        value(readLines).elementAt(2).toBe().equalTo(l2));
   }
 
   private String createString(int length) {

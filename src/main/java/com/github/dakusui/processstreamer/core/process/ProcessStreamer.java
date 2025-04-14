@@ -97,7 +97,7 @@ public class ProcessStreamer {
           try {
             this.waitFor();
             //noinspection LoggingSimilarMessage
-            LOGGER.debug("Closed");
+            LOGGER.debug("Stream closed");
           } catch (InterruptedException ignored) {
           } finally {
             destroy();
@@ -210,7 +210,7 @@ public class ProcessStreamer {
     try (inputDestination) {
       input.close();
     }
-    LOGGER.debug("Closed");
+    LOGGER.debug("Input Stream Closed");
   }
 
   /**
