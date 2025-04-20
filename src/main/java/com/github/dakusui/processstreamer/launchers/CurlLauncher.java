@@ -2,7 +2,7 @@ package com.github.dakusui.processstreamer.launchers;
 
 import com.github.dakusui.processstreamer.core.process.CommandInvoker;
 
-public class CurlClient {
+public class CurlLauncher {
   
   public static Builder begin() {
     return new Builder();

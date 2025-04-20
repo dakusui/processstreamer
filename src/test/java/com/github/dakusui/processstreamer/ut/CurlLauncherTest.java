@@ -1,7 +1,6 @@
 package com.github.dakusui.processstreamer.ut;
 
-import com.github.dakusui.processstreamer.launchers.CurlClient;
-import com.github.valid8j.pcond.forms.Predicates;
+import com.github.dakusui.processstreamer.launchers.CurlLauncher;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,11 +34,11 @@ public class CurlLauncherTest {
   @Test
   public void _curlTest() {
     int port = server.getAddress().getPort();
-    List<String> out = CurlClient.begin()
-                                 .arg("http://localhost:" + port + "/hello")
-                                 .perform()
-                                 .peek(System.out::println)
-                                 .toList();
+    List<String> out = CurlLauncher.begin()
+                                   .arg("http://localhost:" + port + "/hello")
+                                   .perform()
+                                   .peek(System.out::println)
+                                   .toList();
     assertAll(
         value(out).size().toBe().greaterThan(0),
         value(out).toBe().containingElementsInOrder(List.of(containsString("Hello, world!"))));
@@ -47,11 +46,11 @@ public class CurlLauncherTest {
 
   @Test
   public void _curlTest2() {
-    List<String> out = CurlClient.begin()
-                                 .option("-V")
-                                 .perform()
-                                 .peek(System.out::println)
-                                 .toList();
+    List<String> out = CurlLauncher.begin()
+                                   .option("-V")
+                                   .perform()
+                                   .peek(System.out::println)
+                                   .toList();
     assertAll(
         value(out).size().toBe().greaterThan(0),
         value(out).elementAt(0).asString().toBe().containing("curl"));
