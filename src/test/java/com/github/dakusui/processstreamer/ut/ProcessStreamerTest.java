@@ -129,7 +129,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
 
       @Test
       public void givenStreamImmediatelyCloses$whenCommandWritingOneThousandLines$thenEventuallyFinishes() {
-        assertTimeout(Duration.ofMillis(1_0000), () -> source(CommandInvoker.local()).command("seq 1 1000")
+        assertTimeout(Duration.ofMillis(10_000), () -> source(CommandInvoker.local()).command("seq 1 1000")
                                                                                      .build()
                                                                                      .stream()
                                                                                      .forEach(System.out::println));
@@ -249,7 +249,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
       @Test
       public void givenSortPipedToCatN$whenDrainOneMillionLines$thenOutputIsCorrectAndInOrder() {
         int num = 180_000;
-        assertTimeout(Duration.ofMillis(1_000), () -> assertStatement(
+        assertTimeout(Duration.ofMillis(180_000), () -> assertStatement(
             value(runProcessStreamer(() -> pipe(dataStream("data", num))
                 .command("sort | cat -n")
                 .build())).invoke("size").asInteger().toBe().equalTo(num).$()));

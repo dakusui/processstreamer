@@ -1,6 +1,7 @@
 package com.github.dakusui.processstreamer.ut;
 
 import com.github.dakusui.processstreamer.launchers.CurlLauncher;
+import com.github.dakusui.processstreamer.ututils.TestUtils;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,7 +16,7 @@ import static com.github.valid8j.fluent.Expectations.assertAll;
 import static com.github.valid8j.fluent.Expectations.value;
 import static com.github.valid8j.pcond.forms.Predicates.containsString;
 
-public class CurlLauncherTest {
+public class CurlLauncherTest extends TestUtils.TestBase {
   public static HttpServer server;
 
   @BeforeAll

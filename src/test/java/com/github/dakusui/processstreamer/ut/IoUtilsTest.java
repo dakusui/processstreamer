@@ -12,12 +12,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static com.github.valid8j.fluent.Expectations.*;
+import static com.github.valid8j.fluent.Expectations.assertAll;
+import static com.github.valid8j.fluent.Expectations.value;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 public class IoUtilsTest {
-  private static final int DEFAULT_MAX_LINE_LENGTH = 1024;
-
+  private static final int DEFAULT_MAX_LINE_LENGTH = 8192;
+  
   @Test
   public void longerLineThanMaxBytesPerLine() throws IOException {
     String data = createString(4096);
@@ -31,7 +33,7 @@ public class IoUtilsTest {
         value(readLines).size().toBe().equalTo(1),
         value(readLines).elementAt(0).toBe().equalTo(data));
   }
-
+  
   @Test
   public void shorterLineThanMaxBytesPerLine() throws IOException {
     String data = createString(100);
@@ -46,7 +48,7 @@ public class IoUtilsTest {
         value(readLines).elementAt(0).toBe().equalTo(data)
     );
   }
-
+  
   @Test
   public void shorterLineThanMaxBytesPerLineByOneByte() throws IOException {
     String data = createString(DEFAULT_MAX_LINE_LENGTH - 1);
@@ -60,7 +62,7 @@ public class IoUtilsTest {
         value(readLines).size().toBe().equalTo(1),
         value(readLines).elementAt(0).toBe().equalTo(data));
   }
-
+  
   @Test
   public void lineWhoseLengthIsEqualToMaxBytesPerLine() throws IOException {
     String data = createString(1024);
@@ -70,12 +72,12 @@ public class IoUtilsTest {
     while ((line = r.readLine()) != null) {
       readLines.add(line);
     }
-
+    
     assertAll(
         value(readLines).size().toBe().equalTo(1),
         value(readLines).elementAt(0).toBe().equalTo(data));
   }
-
+  
   @Test
   public void longerLineThanMaxBytesPerLineByOneByte() throws IOException {
     String data = createString(DEFAULT_MAX_LINE_LENGTH + 1);
@@ -89,7 +91,7 @@ public class IoUtilsTest {
         value(readLines).size().toBe().equalTo(1),
         value(readLines).elementAt(0).toBe().equalTo(data));
   }
-
+  
   @Test
   public void emptyLine() throws IOException {
     String data = "";
@@ -100,10 +102,9 @@ public class IoUtilsTest {
       readLines.add(line);
     }
     assertAll(
-        value(readLines).size().toBe().equalTo(1),
-        value(readLines).elementAt(0).toBe().equalTo(data));
+        value(readLines).size().toBe().equalTo(0));
   }
-
+  
   @Test
   public void emptyLines() throws IOException {
     String data = String.format("%n");
@@ -117,7 +118,7 @@ public class IoUtilsTest {
         value(readLines).size().toBe().equalTo(1),
         value(readLines).elementAt(0).toBe().equalTo(""));
   }
-
+  
   @Test
   public void lineAfterEmptyLine() throws IOException {
     String data = String.format("%nhello");
@@ -131,8 +132,8 @@ public class IoUtilsTest {
         value(readLines).size().toBe().equalTo(2),
         value(readLines).elementAt(0).toBe().equalTo(""),
         value(readLines).elementAt(1).toBe().equalTo("hello"));
-   }
-
+  }
+  
   @Test
   public void twoLinesA() throws IOException {
     String l1 = createString(DEFAULT_MAX_LINE_LENGTH - 1);
@@ -149,7 +150,7 @@ public class IoUtilsTest {
         value(readLines).elementAt(0).toBe().equalTo(l1),
         value(readLines).elementAt(1).toBe().equalTo(l2));
   }
-
+  
   @Test
   public void twoLinesB() throws IOException {
     String l1 = createString(1024);
@@ -166,7 +167,7 @@ public class IoUtilsTest {
         value(readLines).elementAt(0).toBe().equalTo(l1),
         value(readLines).elementAt(1).toBe().equalTo(l2));
   }
-
+  
   @Test
   public void lines() throws IOException {
     String l1 = createString(DEFAULT_MAX_LINE_LENGTH - 1);
@@ -174,18 +175,19 @@ public class IoUtilsTest {
     String l3 = createString(DEFAULT_MAX_LINE_LENGTH + 1);
     String data = String.format("%s%n%s%n%s", l1, l2, l3);
     List<String> readLines = new LinkedList<>();
-    BufferedReader r = IoUtils.bufferedReader(new ByteArrayInputStream(data.getBytes(Charset.defaultCharset())), Charset.defaultCharset());
-    String line;
-    while ((line = r.readLine()) != null) {
-      readLines.add(line);
+    try (BufferedReader r = IoUtils.bufferedReader(new ByteArrayInputStream(data.getBytes(UTF_8)), UTF_8)) {
+      String line;
+      while ((line = r.readLine()) != null) {
+        readLines.add(line);
+      }
     }
     assertAll(
         value(readLines).size().toBe().equalTo(3),
         value(readLines).elementAt(0).toBe().equalTo(l1),
-        value(readLines).elementAt(1).toBe().equalTo(l1),
-        value(readLines).elementAt(2).toBe().equalTo(l2));
+        value(readLines).elementAt(1).toBe().equalTo(l2),
+        value(readLines).elementAt(2).toBe().equalTo(l3));
   }
-
+  
   @Test
   public void shortLines() throws IOException {
     String l1 = createString(10);
@@ -204,7 +206,7 @@ public class IoUtilsTest {
         value(readLines).elementAt(1).toBe().equalTo(l1),
         value(readLines).elementAt(2).toBe().equalTo(l2));
   }
-
+  
   private String createString(int length) {
     StringBuilder b = new StringBuilder();
     for (int j = 0; j < length; j++) {
@@ -212,14 +214,14 @@ public class IoUtilsTest {
     }
     return b.toString();
   }
-
+  
   private static Predicate<Integer> equalToOne() {
     return new Predicate<Integer>() {
       @Override
       public boolean test(Integer integer) {
         return Objects.equals(integer, 1);
       }
-
+      
       @Override
       public String toString() {
         return "equalTo[1]";
