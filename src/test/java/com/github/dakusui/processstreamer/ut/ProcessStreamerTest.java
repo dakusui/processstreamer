@@ -35,10 +35,10 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
       ProcessStreamer ps = source().command("echo $HELLO")
                                    .env("HELLO", "world")
                                    .build();
-
+      
       assertStatement(value(ps.stream().collect(Collectors.joining())).toBe().equalTo("world"));
     }
-
+    
     @Test
     public void givenCwd$whenEchoEnvVarHELLO$then_world_isPrinted() {
       File dir = new File(System.getProperty("user.dir")).getParentFile();
@@ -46,10 +46,10 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                    .cwd(dir)
                                    .configureStdout(false, false, true)
                                    .build();
-
+      
       assertStatement(value(ps.stream().collect(Collectors.joining())).toBe().equalTo(dir.getAbsolutePath()));
     }
-
+    
     @Test
     public void givenCommandNotFound$whenStreamClosed$thenExceptionThrown() {
       assertThrows(ProcessStreamer.Failure.class, () -> {
@@ -58,7 +58,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
             .command(commandNotFound)
             .checker(ProcessStreamer.Checker.createDefault())
             .build();
-
+        
         try (Stream<String> s = ps.stream()) {
           s.forEach(System.out::println);
         } catch (ProcessStreamer.Failure e) {
@@ -67,7 +67,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
         }
       });
     }
-
+    
     @Nested
     public class LifeCycleMethodsTest extends TestUtils.TestBase {
       @Test
@@ -85,7 +85,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
         });
       }
     }
-
+    
     @Nested
     public class SinkTest extends TestUtils.TestBase {
       @Test
@@ -97,7 +97,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
           ps.stream().forEach(System.out::println);
         });
       }
-
+      
       @Test
       public void testSinkBigger() {
         assertTimeout(Duration.ofMillis(3_000), () -> {
@@ -108,7 +108,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
         });
       }
     }
-
+    
     @Nested
     class SourceTest extends TestUtils.TestBase {
       @Test
@@ -119,14 +119,14 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                     .stream()
                                     .forEach(System.out::println));
       }
-
+      
       @Test
       public void givenStreamImmediatelyCloses$whenCommandWritingTenThousandLines$thenEventuallyFinishes() {
         assertTimeout(Duration.ofSeconds(10), () -> source().command("seq 1 100000")
                                                             .build()
                                                             .stream().forEach(System.out::println));
       }
-
+      
       @Test
       public void givenStreamImmediatelyCloses$whenCommandWritingOneThousandLines$thenEventuallyFinishes() {
         assertTimeout(Duration.ofMillis(10_000), () -> source(CommandInvoker.local()).command("seq 1 1000")
@@ -134,7 +134,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                                                                      .stream()
                                                                                      .forEach(System.out::println));
       }
-
+      
       @Test
       public void givenCommandResultingInError$whenExecuted$thenOutputIsCorrect() {
         class Result {
@@ -145,7 +145,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
               .build();
           private int exitCode;
           private final List<String> out = new LinkedList<>();
-
+          
           /*
            * This method is reflectively called.
            */
@@ -153,7 +153,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
           public int exitCode() {
             return this.exitCode;
           }
-
+          
           /*
            * This method is reflectively called.
            */
@@ -161,7 +161,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
           public List<String> out() {
             return this.out;
           }
-
+          
           /*
            * This method is reflectively called.
            */
@@ -173,19 +173,17 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
         Result result = new Result();
         result.ps.stream().peek(System.out::println).forEach(result.out::add);
         result.exitCode = result.ps.exitValue();
-
+        
         System.out.println(result.ps.getPid() + "=" + result.exitCode);
         result.out.forEach(System.out::println);
-
+        
         assertAll(
             value(result).invoke("out")
                          .asListOf(String.class)
-                         .toObject(v -> String.join(String.format("%n"), v))
-                         .asString()
                          .toBe()
-                         .containingSubstrings("_Echo",
-                                               "not found",
-                                               "hello world"),
+                         .containingElementToBe(containsString("_Echo"))
+                         .containingElementToBe(containsString("not found"))
+                         .containingElementToBe(containsString("hello world")),
             value(result).invoke("exitCode").toBe().equalTo(127),
             value(result).invoke("processStreamer")
                          .invoke("toString")
@@ -194,7 +192,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                          .containing("hello world")
                          .containing("not found"));
       }
-
+      
       @Test
       public void givenEchos$whenStream$thenOutputIsCorrectAndInOrder() throws InterruptedException {
         assertTimeout(Duration.ofMillis(1_000), () -> {
@@ -207,7 +205,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                 .toBe()
                 .containingElementsInOrder("hello world", "!"));
       }
-
+      
       @Test()
       public void givenUnknownCommand$whenStream$thenFailureThrown() {
         assertTimeout(Duration.ofMillis(1_000), () -> {
@@ -218,7 +216,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
         });
       }
     }
-
+    
     /**
      * Pipe test
      */
@@ -234,7 +232,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                                    containsString("c")))
                 .predicate(lastElementToBe(equalTo("c")))));
       }
-
+      
       @Test
       public void givenSort$whenDrain1kDataAndClose$thenOutputIsCorrectAndInOrder() {
         assertTimeout(Duration.ofMillis(1_000), () -> assertStatement(
@@ -245,7 +243,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                                    containsString("999")))
                 .predicate(lastElementToBe(containsString("999")))));
       }
-
+      
       @Test
       public void givenSortPipedToCatN$whenDrainOneMillionLines$thenOutputIsCorrectAndInOrder() {
         int num = 180_000;
@@ -254,7 +252,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                 .command("sort | cat -n")
                 .build())).invoke("size").asInteger().toBe().equalTo(num).$()));
       }
-
+      
       @Test
       public void givenCatN$whenDrainData$thenOutputIsCorrectAndInOrder() {
         assertTimeout(Duration.ofMillis(1_000), () ->
@@ -265,15 +263,15 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                                                    containsString("c")))
                                 .predicate(lastElementToBe(containsString("c")))));
       }
-
+      
       @Test
       public void givenCat$whenDrainMediumSizeDataAndClose$thenOutputIsCorrectAndInOrder() {
         assertTimeout(Duration.ofMillis(1_000), () -> {
           int lines = 100_000;
           List<String> data = new ArrayList<>(runProcessStreamer(() -> pipe(dataStream("data", lines)).command("cat -n").build()));
-
+          
           data.forEach(System.err::println);
-
+          
           assertStatement(
               value(data).size()
                          .toBe()
@@ -286,7 +284,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                          .predicate(lastElementToBe(containsString("data-" + (lines - 1)))));
         });
       }
-
+      
       @Test
       public void givenCatWithMinimumQueueAndRingBufferSize$whenDrainDataAndClose$thenOutputIsCorrectAndInOrder() {
         assertTimeout(Duration.ofMillis(1_000), () -> assertStatement(
@@ -303,7 +301,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
                                                    containsString("h")))
                 .predicate(lastElementToBe(containsString("h")))));
       }
-
+      
       @Test
       public void pipeTest() {
         assertTimeout(Duration.ofMillis(1_000), () -> {
@@ -314,7 +312,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
           ps.stream().forEach(System.out::println);
         });
       }
-
+      
       @Test
       public void pipeTest100_000() {
         assertTimeout(Duration.ofMillis(10_000), () -> {
@@ -326,7 +324,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
         });
       }
     }
-
+    
     @Nested
     public class CheckerTest extends TestUtils.TestBase {
       @Test
@@ -337,7 +335,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
               .command(command)
               .checker(new TestChecker())
               .build();
-
+          
           try (Stream<String> s = ps.stream()) {
             s.forEach(System.out::println);
           } catch (ProcessStreamer.Failure e) {
@@ -351,64 +349,64 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
           }
         });
       }
-
+      
       public static class TestChecker implements ProcessStreamer.Checker {
-
+        
         @Override
         public StreamChecker forStdOut() {
           return new StreamChecker() {
             private boolean flag = false;
-
+            
             @Override
             public boolean getAsBoolean() {
               return flag;
             }
-
+            
             @Override
             public void accept(String s) {
               if (s.contains("test")) {
                 flag = true;
               }
             }
-
+            
             @Override
             public String toString() {
               return "Detecting an issue in stdOut";
             }
           };
         }
-
+        
         @Override
         public StreamChecker forStdErr() {
           return new StreamChecker() {
             private boolean flag = false;
-
+            
             @Override
             public boolean getAsBoolean() {
               return flag;
             }
-
+            
             @Override
             public void accept(String s) {
               if (s.contains("test")) {
                 flag = true;
               }
             }
-
+            
             @Override
             public String toString() {
               return "Detecting an issue in stdErr";
             }
           };
         }
-
+        
         @Override
         public Predicate<Integer> exitCodeChecker() {
           return i -> i == 0;
         }
       }
     }
-
+    
     private static List<String> runProcessStreamer(Supplier<ProcessStreamer> processStreamerSupplier)
         throws InterruptedException {
       ProcessStreamer ps = processStreamerSupplier.get();
