@@ -1,7 +1,7 @@
 package com.github.dakusui.processstreamer.ut;
 
 
-import com.github.dakusui.processstreamer.core.process.ContextualCommandInvoker;
+import com.github.dakusui.processstreamer.core.process.CommandInvoker;
 import com.github.dakusui.processstreamer.launchers.CommandLauncher;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +52,7 @@ public class CommandLauncherTest {
   public void _whenTwoArgumentsPassed_thenBothPrinted() {
     List<String> out = new ArrayList<>();
     CommandLauncher.begin()
-                   .shell(ContextualCommandInvoker.prefixStyle("time"))
+                   .shell(CommandInvoker.prefixStyle("time"))
                    .command("echo")
                    .arg("hello")
                    .arg("world")

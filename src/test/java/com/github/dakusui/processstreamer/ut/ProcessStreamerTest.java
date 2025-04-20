@@ -1,6 +1,6 @@
 package com.github.dakusui.processstreamer.ut;
 
-import com.github.dakusui.processstreamer.core.process.ContextualCommandInvoker;
+import com.github.dakusui.processstreamer.core.process.CommandInvoker;
 import com.github.dakusui.processstreamer.core.process.ProcessStreamer;
 import com.github.dakusui.processstreamer.ututils.TestUtils;
 import org.junit.jupiter.api.Nested;
@@ -129,10 +129,10 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
 
       @Test
       public void givenStreamImmediatelyCloses$whenCommandWritingOneThousandLines$thenEventuallyFinishes() {
-        assertTimeout(Duration.ofMillis(1_0000), () -> source(ContextualCommandInvoker.local()).command("seq 1 1000")
-                                                                                               .build()
-                                                                                               .stream()
-                                                                                               .forEach(System.out::println));
+        assertTimeout(Duration.ofMillis(1_0000), () -> source(CommandInvoker.local()).command("seq 1 1000")
+                                                                                     .build()
+                                                                                     .stream()
+                                                                                     .forEach(System.out::println));
       }
 
       @Test
@@ -238,7 +238,7 @@ public class ProcessStreamerTest extends TestUtils.TestBase {
       @Test
       public void givenSort$whenDrain1kDataAndClose$thenOutputIsCorrectAndInOrder() {
         assertTimeout(Duration.ofMillis(1_000), () -> assertStatement(
-            value(runProcessStreamer(() -> pipe(dataStream("data", 1_000), ContextualCommandInvoker.local()).command("sort").build()))
+            value(runProcessStreamer(() -> pipe(dataStream("data", 1_000), CommandInvoker.local()).command("sort").build()))
                 .toBe()
                 .containingElementsInOrder(List.of(containsString("997"),
                                                    containsString("998"),
