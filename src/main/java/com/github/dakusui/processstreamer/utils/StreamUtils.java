@@ -4,40 +4,22 @@ import com.github.dakusui.processstreamer.exceptions.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static com.github.dakusui.processstreamer.utils.Checks.greaterThan;
-import static com.github.dakusui.processstreamer.utils.Checks.requireArgument;
 import static com.github.dakusui.processstreamer.utils.ConcurrencyUtils.updateAndNotifyAll;
 import static com.github.dakusui.processstreamer.utils.ConcurrencyUtils.waitWhile;
-import static java.lang.Math.abs;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 /**
  * = A Stream Utility class
@@ -66,8 +48,8 @@ public enum StreamUtils {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public static  <T> Stream<T> concat(Stream<T>... streams) {
+  @SafeVarargs
+  public static <T> Stream<T> concat(Stream<T>... streams) {
     if (streams.length == 0) {
       return Stream.empty();
     }
@@ -77,7 +59,7 @@ public enum StreamUtils {
     if (streams.length == 2) {
       return Stream.concat(streams[0], streams[1]);
     }
-    Stream<T>[] rest = new Stream[streams.length - 1];
+    @SuppressWarnings("unchecked") Stream<T>[] rest = new Stream[streams.length - 1];
     System.arraycopy(streams, 1, rest, 0, rest.length);
     return concat(streams[0], concat(rest));
   }
@@ -97,6 +79,7 @@ public enum StreamUtils {
 
     @Override
     default void close() {
+      //noinspection resource
       printStream().flush();
       printStream().close();
     }
@@ -104,7 +87,7 @@ public enum StreamUtils {
     PrintStream printStream();
 
     static CloseableStringConsumer create(OutputStream os, Charset charset) throws UnsupportedEncodingException {
-      PrintStream ps = new PrintStream(os, true, charset.name());
+      PrintStream ps = new PrintStream(os, true, charset);
       return () -> ps;
     }
   }
@@ -133,114 +116,15 @@ public enum StreamUtils {
       }
     };
     return Stream.concat(requireNonNull(in), Stream.of(sentinel))
-        .filter(o -> {
-          if (o != sentinel)
-            return true;
-          else {
-            action.accept(in);
-            return false;
-          }
-        })
-        .map(each -> (T) each);
-  }
-
-  public static <T> List<Stream<T>> partition(
-      ExecutorService threadPool,
-      Consumer<ExecutorService> threadPoolCloser,
-      Stream<T> in,
-      int numQueues,
-      int eachQueueSize,
-      Function<T, Integer> partitioner) {
-    return split(
-        threadPool, threadPoolCloser, in, numQueues, eachQueueSize,
-        (blockingQueues, each) ->
-            singletonList(blockingQueues.get(abs(partitioner.apply(each)) % numQueues)));
-  }
-
-  public static <T> List<Stream<T>> tee(
-      ExecutorService threadPool,
-      Consumer<ExecutorService> threadPoolCloser,
-      Stream<T> in,
-      int numQueues,
-      int queueSize) {
-    return split(threadPool, threadPoolCloser, in, numQueues, queueSize, (blockingQueues, t) -> blockingQueues);
-  }
-
-  private static <T> List<Stream<T>> split(
-      ExecutorService threadPool,
-      Consumer<ExecutorService> threadPoolCloser,
-      Stream<T> in,
-      int numQueues,
-      int eachQueueSize,
-      BiFunction<List<BlockingQueue<Object>>, T, List<BlockingQueue<Object>>> selector) {
-    requireArgument(numQueues, greaterThan(0));
-    if (numQueues == 1)
-      return singletonList(in);
-    List<BlockingQueue<Object>> queues = IntStream.range(0, numQueues)
-        .mapToObj(i -> new ArrayBlockingQueue<>(eachQueueSize))
-        .collect(toList());
-
-    Object sentinel = initializeSplit(threadPool, threadPoolCloser, in, selector, queues);
-
-    return IntStream.range(0, numQueues)
-        .mapToObj(
-            c -> StreamSupport.stream(
-                ((Iterable<T>) () -> iteratorFinishingOnSentinel(
-                    e -> e == sentinel,
-                    blockingDataReader(queues.get(c)))).spliterator(),
-                false))
-        .collect(toList());
-  }
-
-  private static <T> Object initializeSplit(
-      ExecutorService threadPool,
-      Consumer<ExecutorService> threadPoolCloser,
-      Stream<T> in,
-      BiFunction<List<BlockingQueue<Object>>, T, List<BlockingQueue<Object>>> selector,
-      List<BlockingQueue<Object>> queues) {
-    class TaskSubmitter implements Runnable {
-      private final AtomicBoolean initialized = new AtomicBoolean(false);
-      private final Object        sentinel;
-
-      private TaskSubmitter(Object sentinel) {
-        this.sentinel = sentinel;
-      }
-
-      @SuppressWarnings("unchecked")
-      public void run() {
-        threadPool.submit(
-            () -> StreamUtils.closeOnFinish(
-                Stream.concat(in, Stream.of(sentinel))
-                    .onClose(() -> threadPoolCloser.accept(threadPool)))
-                .forEach(e -> {
-                      if (e == sentinel)
-                        queues.forEach(q -> {
-                          initializeIfNecessaryAndNotifyAll();
-                          putElement(q, e);
-                        });
-                      else
-                        selector.apply(queues, (T) e).forEach(q -> {
-                          initializeIfNecessaryAndNotifyAll();
-                          putElement(q, e);
-                        });
-                    }
-                )
-        );
-        synchronized (initialized) {
-          waitWhile(initialized, i -> !i.get());
-        }
-      }
-
-      private void initializeIfNecessaryAndNotifyAll() {
-        synchronized (initialized) {
-          if (!initialized.get())
-            updateAndNotifyAll(initialized, v -> v.set(true));
-        }
-      }
-    }
-    Object sentinel = createSentinel(0);
-    new TaskSubmitter(sentinel).run();
-    return sentinel;
+                 .filter(o -> {
+                   if (o != sentinel)
+                     return true;
+                   else {
+                     action.accept(in);
+                     return false;
+                   }
+                 })
+                 .map(each -> (T) each);
   }
 
   /**
@@ -348,7 +232,7 @@ public enum StreamUtils {
        * source {@code i}.
        * This is different from  a sentinel.
        */
-      private Object invalid = new Object();
+      private final Object invalid = new Object();
       Object next = invalid;
 
       @Override
@@ -413,7 +297,7 @@ public enum StreamUtils {
     static <E> RingBuffer<E> create(int size) {
       return new RingBuffer<E>() {
         int cur = 0;
-        List<E> buffer = new ArrayList<>(size);
+        final List<E> buffer = new ArrayList<>(size);
 
         @Override
         public void write(E elem) {

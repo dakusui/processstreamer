@@ -40,13 +40,13 @@ public class ProcessStreamer {
   private final RingBuffer<String> ringBuffer;
   private final ExecutorService threadPool;
   private final Checker checker;
-  private final ContextualCommandInvoker contextualCommandInvoker;
+  private final CommandInvoker commandInvoker;
   private final Stream<String> output;
   private final Stream<String> input;
   private final CloseableStringConsumer inputDestination;
 
   private ProcessStreamer(
-      ContextualCommandInvoker contextualCommandInvoker,
+      CommandInvoker commandInvoker,
       List<String> commandLine,
       File cwd,
       Map<String, String> env,
@@ -57,15 +57,15 @@ public class ProcessStreamer {
       int queueSize,
       int ringBufferSize,
       Checker checker) {
-    this.contextualCommandInvoker = contextualCommandInvoker;
+    this.commandInvoker = commandInvoker;
     this.commandLine = commandLine;
-    this.process = createProcess(this.contextualCommandInvoker, this.commandLine, cwd, env);
+    this.process = createProcess(this.commandInvoker, this.commandLine, cwd, env);
     Ports ports = new Ports(this.process.getErrorStream(), this.process.getInputStream(), this.process.getOutputStream());
     final RingBuffer<String> ringBuffer = RingBuffer.create(ringBufferSize);
     this.ringBuffer = ringBuffer;
     this.formatter = () -> {
       synchronized (this.ringBuffer) {
-        return format("%s:%s:...%s", this.contextualCommandInvoker, this.commandLine, ringBuffer.stream().collect(joining(";")));
+        return format("%s:%s:...%s", this.commandInvoker, this.commandLine, ringBuffer.stream().collect(joining(";")));
       }
     };
     this.checker = checker;
@@ -97,7 +97,7 @@ public class ProcessStreamer {
           try {
             this.waitFor();
             //noinspection LoggingSimilarMessage
-            LOGGER.debug("Closed");
+            LOGGER.debug("Stream closed");
           } catch (InterruptedException ignored) {
           } finally {
             destroy();
@@ -168,33 +168,33 @@ public class ProcessStreamer {
   }
 
   public static ProcessStreamer.Builder source() {
-    return source(ContextualCommandInvoker.local());
+    return source(CommandInvoker.local());
   }
 
-  public static ProcessStreamer.Builder source(ContextualCommandInvoker contextualCommandInvoker) {
-    return new ProcessStreamer.Builder(contextualCommandInvoker).stdin(null)
-                                                                .configureStdout(true, true, true)
-                                                                .configureStderr(true, true, false);
+  public static ProcessStreamer.Builder source(CommandInvoker commandInvoker) {
+    return new ProcessStreamer.Builder(commandInvoker).stdin(null)
+                                                      .configureStdout(true, true, true)
+                                                      .configureStderr(true, true, false);
   }
 
   public static ProcessStreamer.Builder sink(Stream<String> stdin) {
-    return sink(stdin, ContextualCommandInvoker.local());
+    return sink(stdin, CommandInvoker.local());
   }
 
-  public static ProcessStreamer.Builder sink(Stream<String> stdin, ContextualCommandInvoker contextualCommandInvoker) {
-    return new ProcessStreamer.Builder(contextualCommandInvoker).stdin(requireNonNull(stdin))
-                                                                .configureStdout(true, true, true)
-                                                                .configureStderr(true, true, false);
+  public static ProcessStreamer.Builder sink(Stream<String> stdin, CommandInvoker commandInvoker) {
+    return new ProcessStreamer.Builder(commandInvoker).stdin(requireNonNull(stdin))
+                                                      .configureStdout(true, true, true)
+                                                      .configureStderr(true, true, false);
   }
 
   public static ProcessStreamer.Builder pipe(Stream<String> stdin) {
-    return pipe(stdin, ContextualCommandInvoker.local());
+    return pipe(stdin, CommandInvoker.local());
   }
 
-  public static ProcessStreamer.Builder pipe(Stream<String> stdin, ContextualCommandInvoker contextualCommandInvoker) {
-    return new ProcessStreamer.Builder(contextualCommandInvoker).stdin(requireNonNull(stdin))
-                                                                .configureStdout(true, true, true)
-                                                                .configureStderr(true, true, false);
+  public static ProcessStreamer.Builder pipe(Stream<String> stdin, CommandInvoker commandInvoker) {
+    return new ProcessStreamer.Builder(commandInvoker).stdin(requireNonNull(stdin))
+                                                      .configureStdout(true, true, true)
+                                                      .configureStderr(true, true, false);
   }
 
   /**
@@ -210,7 +210,7 @@ public class ProcessStreamer {
     try (inputDestination) {
       input.close();
     }
-    LOGGER.debug("Closed");
+    LOGGER.debug("Input Stream Closed");
   }
 
   /**
@@ -309,10 +309,10 @@ public class ProcessStreamer {
     return ret;
   }
 
-  private static Process createProcess(ContextualCommandInvoker contextualCommandInvoker, List<String> command, File cwd, Map<String, String> env) {
+  private static Process createProcess(CommandInvoker commandInvoker, List<String> command, File cwd, Map<String, String> env) {
     try {
       if (LOGGER.isDebugEnabled())
-        LOGGER.debug("Executing a command line:{}(shell={})", command, String.format("%s", contextualCommandInvoker));
+        LOGGER.debug("Executing a command line:{}(shell={})", command, String.format("%s", commandInvoker));
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("cwd:{}", cwd);
         LOGGER.trace("envvars:[");
@@ -320,7 +320,7 @@ public class ProcessStreamer {
           LOGGER.trace("(envvar):{}={}", envvar, env.get(envvar));
         LOGGER.trace("]");
       }
-      ProcessBuilder b = new ProcessBuilder().command(composeCommand(contextualCommandInvoker, command))
+      ProcessBuilder b = new ProcessBuilder().command(composeCommand(commandInvoker, command))
                                              .directory(cwd);
       b.environment().putAll(env);
       return b.start();
@@ -329,8 +329,8 @@ public class ProcessStreamer {
     }
   }
 
-  private static List<String> composeCommand(ContextualCommandInvoker contextualCommandInvoker, List<String> commandLine) {
-    return contextualCommandInvoker.composeCommandLine(commandLine);
+  private static List<String> composeCommand(CommandInvoker commandInvoker, List<String> commandLine) {
+    return commandInvoker.composeCommandLine(commandLine);
   }
 
   private int checkProcessBehaviourWithChecker(ProcessStreamer proc, ProcessStreamer.Checker checker) throws InterruptedException {
@@ -342,7 +342,7 @@ public class ProcessStreamer {
   }
 
   public static class Builder {
-    private ContextualCommandInvoker contextualCommandInvoker;
+    private CommandInvoker commandInvoker;
     private List<String> command;
     private File cwd;
     private final Map<String, String> env = new HashMap<>();
@@ -356,25 +356,25 @@ public class ProcessStreamer {
 
     Builder() {
       this.checker(Checker.createDefault());
-      this.shell(ContextualCommandInvoker.local());
+      this.shell(CommandInvoker.local());
     }
 
-    Builder(ContextualCommandInvoker contextualCommandInvoker) {
+    Builder(CommandInvoker commandInvoker) {
       this();
-      this.shell(contextualCommandInvoker);
+      this.shell(commandInvoker);
     }
 
-    public Builder(ContextualCommandInvoker contextualCommandInvoker, String command) {
-      this(contextualCommandInvoker, singletonList(command));
+    public Builder(CommandInvoker commandInvoker, String command) {
+      this(commandInvoker, singletonList(command));
     }
 
-    public Builder(ContextualCommandInvoker contextualCommandInvoker, List<String> command) {
-      this(contextualCommandInvoker);
+    public Builder(CommandInvoker commandInvoker, List<String> command) {
+      this(commandInvoker);
       this.command(command);
     }
 
-    public Builder shell(ContextualCommandInvoker contextualCommandInvoker) {
-      this.contextualCommandInvoker = requireNonNull(contextualCommandInvoker);
+    public Builder shell(CommandInvoker commandInvoker) {
+      this.commandInvoker = requireNonNull(commandInvoker);
       return this;
     }
 
@@ -448,7 +448,7 @@ public class ProcessStreamer {
 
     public ProcessStreamer build() {
       return new ProcessStreamer(
-          this.contextualCommandInvoker,
+          this.commandInvoker,
           this.command,
           this.cwd,
           this.env,
@@ -502,7 +502,7 @@ public class ProcessStreamer {
         return exitCode;
       throw new Failure(
           format("shell=[%s]:command line=[%s]%n%s%n  Recent output:%s",
-                 processStreamer.contextualCommandInvoker,
+                 processStreamer.commandInvoker,
                  processStreamer.commandLine,
                  mismatch.get(),
                  processStreamer.ringBuffer
@@ -534,7 +534,7 @@ public class ProcessStreamer {
     }
 
     static Checker createCheckerForExitCode(int acceptableExitCode) {
-      return createCheckerForExitCode(new Predicate<Integer>() {
+      return createCheckerForExitCode(new Predicate<>() {
         @Override
         public boolean test(Integer value) {
           return Objects.equals(value, acceptableExitCode);

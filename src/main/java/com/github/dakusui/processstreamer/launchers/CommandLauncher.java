@@ -1,7 +1,10 @@
 package com.github.dakusui.processstreamer.launchers;
 
-import com.github.dakusui.processstreamer.core.process.ContextualCommandInvoker;
+import com.github.dakusui.processstreamer.core.process.CommandInvoker;
 import com.github.dakusui.processstreamer.core.process.ProcessStreamer;
+import com.github.dakusui.processstreamer.utils.StreamUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -9,57 +12,60 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class CommandLauncher {
+  private static final Logger LOGGER = LoggerFactory.getLogger(CommandLauncher.class);
   private final File directory;
-  private final ContextualCommandInvoker contextualCommandInvoker;
+  private final CommandInvoker commandInvoker;
   private final String command;
   private final List<CommandLauncherOption> options;
   private final List<String> args;
 
   CommandLauncher(File directory,
-                  ContextualCommandInvoker contextualCommandInvoker,
+                  CommandInvoker commandInvoker,
                   String command,
                   List<CommandLauncherOption> options,
                   List<String> args) {
     this.directory = directory;
-    this.contextualCommandInvoker = contextualCommandInvoker;
+    this.commandInvoker = commandInvoker;
     this.command = command;
     this.options = options;
     this.args = args;
   }
 
-  public static Builder begin() {
-    return new Builder();
+  public static Builder<?> begin() {
+    return new Builder<>();
   }
 
   public Stream<String> perform() {
     List<String> commandLine = composeCommandLine();
-    System.out.println("shell:<" + this.contextualCommandInvoker + ">, command:<" + commandLine + ">, directory:<" + this.directory + ">");
-    return new ProcessStreamer.Builder(this.contextualCommandInvoker, commandLine)
+    LOGGER.debug("shell:<{}>, command:<{}>, directory:<{}>", this.commandInvoker, commandLine, this.directory);
+    return new ProcessStreamer.Builder(this.commandInvoker, commandLine)
         .cwd(this.directory)
         .build()
         .stream();
   }
 
   private List<String> composeCommandLine() {
-    return Stream.concat(Stream.of(this.command),
-                         this.args.stream())
-                 .toList();
+    return StreamUtils.concat(Stream.of(this.command),
+                              this.options.stream().map(CommandLauncherOption::toString),
+                              this.args.stream())
+                      .toList();
   }
 
-  public static class Builder {
+  public static class Builder<B extends Builder<B>> {
     File directory;
-    public ContextualCommandInvoker contextualCommandInvoker;
+    public CommandInvoker commandInvoker;
     public String command;
     private final List<CommandLauncherOption> options = new ArrayList<>();
     private final List<String> args = new ArrayList<>();
 
     public Builder() {
-      this.shell(ContextualCommandInvoker.local());
+      this.shell(CommandInvoker.local());
     }
 
-    public Builder shell(ContextualCommandInvoker contextualCommandInvoker) {
-      this.contextualCommandInvoker = contextualCommandInvoker;
-      return this;
+    @SuppressWarnings("unchecked")
+    public B shell(CommandInvoker commandInvoker) {
+      this.commandInvoker = commandInvoker;
+      return (B) this;
     }
 
     /**
@@ -68,43 +74,46 @@ public class CommandLauncher {
      * @param directory a directory in which the command is run.
      * @return This object.
      */
-    public Builder directory(File directory) {
+    @SuppressWarnings("unchecked")
+    public B directory(File directory) {
       this.directory = directory;
-      return this;
+      return (B) this;
     }
 
-    public Builder shell(String shellCommand) {
-      return this.shell(new ContextualCommandInvoker.Builder.ForLocal().clearOptions()
-                                                                       .withProgram(shellCommand)
-                                                                       .build());
+    public B shell(String shellCommand) {
+      return this.shell(new CommandInvoker.Builder.ForLocal().clearOptions()
+                                                             .withProgram(shellCommand)
+                                                             .build());
     }
 
-    public Builder command(String command) {
+    @SuppressWarnings("unchecked")
+    public B command(String command) {
       this.command = command;
-      return this;
+      return (B) this;
     }
 
-    public Builder arg(String arg) {
+    @SuppressWarnings("unchecked")
+    public B arg(String arg) {
       this.args.add(arg);
-      return this;
+      return (B) this;
     }
 
-    public Builder option(String option) {
+    public B option(String option) {
       return this.option(option, null);
     }
 
-    public Builder option(String option, String value) {
+    @SuppressWarnings("unchecked")
+    public B option(String option, String value) {
       this.options.add(new CommandLauncherOption(option, value));
-      return this;
+      return (B) this;
     }
 
     public CommandLauncher build() {
-      return new CommandLauncher(directory, contextualCommandInvoker, command, this.options, this.args);
+      return new CommandLauncher(directory, commandInvoker, command, this.options, this.args);
     }
 
     public Stream<String> perform() {
       return build().perform();
     }
-
   }
 }
