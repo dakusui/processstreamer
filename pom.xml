@@ -33,11 +33,6 @@
             <name>Hiroshi Ukai</name>
             <email>dakusui@gmail.com</email>
         </developer>
-        <developer>
-            <id>xjj59307</id>
-            <name>Junjian Xu</name>
-            <email>xjj59307@gmail.com</email>
-        </developer>
     </developers>
 
     <properties>
@@ -348,6 +343,10 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/
             </url>
         </repository>
+        <site>
+            <id>${project.name}</id>
+            <url>file:///${user.dir}/target/site-staging</url>
+        </site>
     </distributionManagement>
 
     <profiles>
