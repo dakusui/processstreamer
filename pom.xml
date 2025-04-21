@@ -42,8 +42,14 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <asciidoclet.version>1.5.6</asciidoclet.version>
-        <env.GEM_PATH>/var/lib/gems/2.5.0</env.GEM_PATH>
+        <asciidoclet.version>2.0.0</asciidoclet.version>
+        <env.GEM_PATH>${project.basedir}/.dependencies/gem/ruby</env.GEM_PATH>
+        <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+        <asciidoctor.maven.plugin.version>2.0.0-RC.1</asciidoctor.maven.plugin.version>
+        <asciidoctorj.version>2.5.11</asciidoctorj.version>
+        <asciidoctorj.diagram.version>2.0.1</asciidoctorj.diagram.version>
+        <jruby.version>9.2.12.0</jruby.version>
+        <exec-maven-plugin.version>3.1.0</exec-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -114,34 +120,212 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${asciidoctor.maven.plugin.version}</version>
+                <dependencies>
+                    <!-- Comment this section to use the default jruby artifact provided by the plugin -->
+                    <dependency>
+                        <groupId>org.jruby</groupId>
+                        <artifactId>jruby-complete</artifactId>
+                        <version>${jruby.version}</version>
+                    </dependency>
+                    <!-- Comment this section to use the default AsciidoctorJ artifact provided by the plugin -->
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj</artifactId>
+                        <version>${asciidoctorj.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctorj-diagram</artifactId>
+                        <version>${asciidoctorj.diagram.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <sourceDirectory>src/site/asciidoc</sourceDirectory>
+                    <requires>
+                        <require>asciidoctor-diagram</require>
+                    </requires>
+                    <attributes>
+                        <!-- Example below shows how to specify in this pom instead of System's PATH, the location of dot command of Graphviz, required by PlantUML libraries -->
+                        <!-- Windows:
+                            <graphvizdot>C:\Program Files (x86)\Graphviz2.38\bin\dot.exe</graphvizdot>
+                        -->
+                        <!-- *nix :
+                            <graphvizdot>/usr/local/bin/dot</graphvizdot>
+                        -->
+                    </attributes>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>attach-javadocs</id>
+                        <id>generate-html-doc</id>
+                        <phase>site</phase>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>process-asciidoc</goal>
                         </goals>
+                        <configuration>
+                            <backend>html5</backend>
+                            <outputDirectory>target/site</outputDirectory>
+                            <attributes>
+                                <imagesdir>.</imagesdir>
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <sectanchors>true</sectanchors>
+                                <idprefix />
+                                <idseparator>-</idseparator>
+                            </attributes>
+                        </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
                 <configuration>
-                    <doclet>org.asciidoctor.Asciidoclet</doclet>
+                    <overview>src/main/javadoc/overview.adoc</overview>
+                    <doclet>org.asciidoctor.asciidoclet.Asciidoclet</doclet>
                     <docletArtifact>
                         <groupId>org.asciidoctor</groupId>
                         <artifactId>asciidoclet</artifactId>
                         <version>${asciidoclet.version}</version>
                     </docletArtifact>
-                    <overview>src/main/java/overview.adoc</overview>
+                    <additionalJOptions>
+                        <additionalJOption>--add-exports=jdk.javadoc/jdk.javadoc.internal.api=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-exports=jdk.javadoc/jdk.javadoc.internal.tool=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.api=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.parser=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.tree=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.model=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-opens=jdk.compiler/com.sun.tools.javac.api=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>--add-opens=jdk.compiler/com.sun.tools.javac.parser=asciidoclet
+                        </additionalJOption>
+                        <additionalJOption>-J--add-opens=jdk.javadoc/jdk.javadoc.internal.api=ALL-UNNAMED
+                        </additionalJOption>
+                        <additionalJOption>-J--add-opens=jdk.javadoc/jdk.javadoc.internal.tool=ALL-UNNAMED
+                        </additionalJOption>
+                        <additionalJOption>-J--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+                        </additionalJOption>
+                        <additionalJOption>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+                        </additionalJOption>
+                        <additionalJOption>-J--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+                        </additionalJOption>
+                        <additionalJOption>-Xdoclint:all,-html,-accessibility</additionalJOption>
+                    </additionalJOptions>
                     <additionalOptions>
                         --base-dir ${project.basedir}
                         --attribute "name=${project.name}"
                         --attribute "version=${project.version}"
+                        --attribute "imagesoutdir=.asciidoctor/diagram"
+                        --attribute "imagesdir=.asciidoctor/diagram"
+                        --attribute "dot=/usr/bin/dot"
                         --require asciidoctor-diagram
                         --gem-path ${env.GEM_PATH}
                         --attribute data-uri
                     </additionalOptions>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <executions>
+                    <execution><!-- Remove diagram caches -->
+                        <id>remove diag-*.png files</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>
+                                    ${basedir}/src/build_tools/remove-adoc-diags.sh
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution><!-- Remove diagram caches -->
+                        <id>remove package-info.java files</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>
+                                    ${basedir}/src/build_tools/remove-package-info-java.sh
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution><!-- Run our version calculation script -->
+                        <id>package-info.java generation</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>
+                                    ${basedir}/src/build_tools/package-info-adoc_to_package-info-java.sh
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution><!-- Run our version calculation script -->
+                        <id>asciidoctor-diagram-installation</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>
+                                    -eu
+                                </argument>
+                                <argument>
+                                    ${basedir}/src/build_tools/install-asciidoctor-diagram.sh
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution><!-- Run our version calculation script -->
+                        <id>publish-gh-pages</id>
+                        <phase>site-deploy</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>
+                                    ${basedir}/src/build_tools/publish-gh-pages.sh
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
