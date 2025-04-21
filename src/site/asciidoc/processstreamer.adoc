@@ -1,0 +1,4 @@
+= The `processstreamer` library
+
+This is a `processstreamer` library, an out-of-box CLI program launcher for Java 21.
+
