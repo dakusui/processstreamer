@@ -104,6 +104,7 @@
                 <version>${maven-release-plugin.version}</version>
                 <configuration>
                     <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
+                    <arguments>-P release-sign-artifacts</arguments>
                 </configuration>
             </plugin>
             <plugin>
